@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "shelly2prometheus.fullname" . }}
+  labels:
+    {{- include "shelly2prometheus.labels" . | nindent 4 }}
+data:
+  shellyUrl: {{ .Values.shellyUrl | quote }}
+  metricsPrefix: {{ .Values.metrics.prefix | quote }}
+  metricsPort: {{ .Values.metrics.port | quote }}
+  metricsEndpoint: {{ .Values.metrics.endpoint | quote }}

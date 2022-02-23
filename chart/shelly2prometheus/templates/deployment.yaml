@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "shelly2prometheus.fullname" . }}
+  labels:
+    {{- include "shelly2prometheus.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "shelly2prometheus.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "shelly2prometheus.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "shelly2prometheus.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            # - name: SHELLY2PROMETHEUS_SHELLY_URL
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: {{ include "shelly2prometheus.fullname" . }}
+            #       key: consumerKey
+            # - name: OVH_APPLICATION_SECRET
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: {{ include "shelly2prometheus.fullname" . }}
+            #       key: applicationSecret
+            - name: SHELLY2PROMETHEUS_SHELLY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "shelly2prometheus.fullname" . }}
+                  key: shellyUrl
+            - name: SHELLY2PROMETHEUS_METRICS_PREFIX
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "shelly2prometheus.fullname" . }}
+                  key: metricsPrefix
+            - name: SHELLY2PROMETHEUS_METRICS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "shelly2prometheus.fullname" . }}
+                  key: metricsPort
+            - name: SHELLY2PROMETHEUS_METRICS_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "shelly2prometheus.fullname" . }}
+                  key: metricsEndpoint
+          ports:
+            - name: http
+              containerPort: {{ .Values.metrics.port }}
+              protocol: TCP
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

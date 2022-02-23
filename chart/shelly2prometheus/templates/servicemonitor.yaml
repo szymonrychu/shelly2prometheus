@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "shelly2prometheus.fullname" . }}
+  labels:
+    {{- include "shelly2prometheus.labels" . | nindent 4 }}
+spec:
+  endpoints:
+  - interval: 1m
+    path: {{ .Values.metrics.endpoint }}
+    port: http
+    scrapeTimeout: 1m
+  selector:
+    matchLabels:
+      {{- include "shelly2prometheus.selectorLabels" . | nindent 6 }}
